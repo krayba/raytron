@@ -1,0 +1,17 @@
+for (File file : File.listRoots()) {
+    System.out.println(file.getName() + "\t" + file.getPath());
+}
+
+File[] roots = File.listRoots();
+if (roots.length == 1) {
+    return roots[0].getPath();
+}
+for (File file : roots) {
+    String path = file.getPath();
+    if (!path.startsWith("C:")) {
+        if (file.canWrite()) {
+            return path;
+        }
+    }
+}
+return roots[0].getPath();
