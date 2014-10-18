@@ -1,3 +1,16 @@
+/**
+ * This file forms part of the Mastek Ltd. Copyright (c). All rights reserved
+ * 
+ * 
+ * $Revision: 1 $
+ * 
+ * $Header: /Utilities/PRELicense/lic-src/com/stg/pre/license/swing/LicenseRequestGUI .java 1 11/11/09 11:06a Kedarr $
+ * 
+ * $Log: /Utilities/PRELicense/lic-src/com/stg/pre/license/swing/LicenseRequestGUI .java $
+ * 
+ * 1 11/11/09 11:06a Kedarr Initial class.
+ * 
+ */
 package com.raytron.graphics;
 
 import java.awt.Color;
@@ -38,12 +51,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.google.zxing.BarcodeFormat;
 
 /**
- * A Raytron Barcode Generator UI.
+ * A GUI for creating license.
  * 
  * @author Kedar Raybagkar
+ * @since V1.0R27
  * 
  */
-public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener, PropertyChangeListener {
+public class RaytronQRCodeGeneratorUI extends JFrame implements ActionListener, PropertyChangeListener {
 
     /**
 	 * 
@@ -53,12 +67,15 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
     private final Rectangle GENERATE_PROGRESSBAR_RECTANGLE = new Rectangle(29, 230, 338, 46);
 
     private JPanel jPanel = null;
-    
+    private JLabel jlRaytronProductFile = null;
     private JTextField jtfRaytronProductFile = null;
+    private JLabel jLabelWidthHeight = null;
 
     private JTextField jtfQRCodeWidthHeight = null;
 
     private JButton jfbFileChooserPreLicenseTemplate = null;
+
+    private JLabel jlPDFFile = null;
 
     private JTextField jtfPDFFile = null;
 
@@ -67,6 +84,8 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
     private JButton jButtonGenerate = null;
 
     private JProgressBar jProgressBar = null;
+
+    private JLabel jlHeader = null;
 
     private JRadioButton jrbHeaderYes = null;
 
@@ -95,11 +114,11 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
      * This method initializes
      * 
      */
-    public RaytronBarcodeGeneratorUI() {
+    public RaytronQRCodeGeneratorUI() {
         super();
         DEFAULT_DRIVE = getDerivedDrive();
         DEFAULT_LOAD_FILE = Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, "Product.csv").toString();
-        DEFAULT_SAVE_FILE = Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, BarcodeFormat.QR_CODE.name() + ".pdf").toString(); 
+        DEFAULT_SAVE_FILE = Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, BarcodeFormat.QR_CODE.name() + ".pdf").toString();
         initialize();
     }
 
@@ -114,16 +133,7 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
         this.setLocation((int) (dim.getWidth() - mydim.getWidth()) / 2, (int) (dim.getHeight() - mydim.getHeight()) / 2);
         ImageIcon icon = new ImageIcon(this.getClass().getClassLoader().getResource("raytron-instrument-services-logo-120x120.jpg"));
         this.setIconImage(icon.getImage());
-        addJPanel();
-        addProductFile();
-        addWidthHeightLabelAndField();
-        addPDFFile();
-        addHeaderToBePrinted();
-        addBarCodeTypeLabelAndDropDown();
-        addOverLayImmage();
-        addSaveSampleImmage();
-        addJButtonGenerate();
-        addJProgressBar();
+        this.setContentPane(getJPanel());
         this.setTitle("Raytron QRCode Generator");
         this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         this.setVisible(true);
@@ -136,34 +146,38 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
      * @return javax.swing.JPanel
      * @throws IOException
      */
-    private void addJPanel() {
-        jPanel = (JPanel) this.getContentPane();
-        jPanel.setLayout(null);
-        jPanel.setBorder(new SoftBevelBorder(SoftBevelBorder.RAISED));
-        jPanel.setForeground(Color.black);
-        this.setContentPane(jPanel);
-    }
-
-    private void addHeaderToBePrinted() {
-        addHeader();
-        addJrbHeaderToBePrinted();
-    }
-
-    private void addWidthHeightLabelAndField() {
-        addWidthHeightLabel();
-        addJtfQRCodeWidthHeight();
-    }
-
-    private void addProductFile() {
-        addRaytronProductFileLabel();
-        addJtfProductFile();
-        addJfbFileChooserRaytronProductFile();
-    }
-
-    private void addPDFFile() {
-        addPDFFileLabel();
-        addJtfPDFFile();
-        addJbSaveButton();
+    private JPanel getJPanel() {
+        if (jPanel == null) {
+            createPDFFileLabel();
+            // createPDFColumnsLabel();
+            createWidthHeightLabel();
+            createRaytronProductFileLabel();
+            createHeader();
+            jPanel = (JPanel) this.getContentPane();
+            jPanel.setLayout(null);
+            jPanel.setBorder(new SoftBevelBorder(SoftBevelBorder.RAISED));
+            jPanel.setForeground(Color.black);
+            jPanel.add(jlRaytronProductFile);
+            jPanel.add(getJtfProductFile(), null);
+            jPanel.add(getJfbFileChooserRaytronProductFile(), null);
+            jPanel.add(jLabelWidthHeight, null);
+            jPanel.add(getJtfQRCodeWidthHeight(), null);
+            // jPanel.add(jlPDFColumns, null);
+            // jPanel.add(getJtfPDFColumns(), null);
+            jPanel.add(jlPDFFile, null);
+            jPanel.add(getJtfPDFFile(), null);
+            jPanel.add(getJbSaveButton(), null);
+            getJrbHeaderToBePrinted();
+            jPanel.add(getJButtonGenerate(), null);
+            jPanel.add(getJProgressBar(), null);
+            jPanel.add(jlHeader, null);
+            jPanel.add(jrbHeaderYes, null);
+            jPanel.add(jrbHeaderNo, null);
+            addBarCodeTypeLabelAndDropDown();
+            addOverLayImmage();
+            addSaveSampleImmage();
+        }
+        return jPanel;
     }
 
     /**
@@ -172,6 +186,7 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
         JLabel barcodeType = new JLabel();
         barcodeType.setText("Barcode Type");
         barcodeType.setBounds(new Rectangle(8, 134, 126, 23));
+        // barcodeType.setDisplayedMnemonic(KeyEvent.VK_B);
         jPanel.add(barcodeType);
         ddBarCodeType = new JComboBox<BarcodeFormat>(new BarcodeFormat[] { BarcodeFormat.AZTEC, BarcodeFormat.CODABAR, BarcodeFormat.CODE_39, BarcodeFormat.CODE_128,
                 BarcodeFormat.DATA_MATRIX, BarcodeFormat.PDF_417, BarcodeFormat.ITF, BarcodeFormat.EAN_8, BarcodeFormat.EAN_13, BarcodeFormat.UPC_A, BarcodeFormat.QR_CODE });
@@ -230,8 +245,8 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
     /**
      * 
      */
-    private void addRaytronProductFileLabel() {
-        JLabel jlRaytronProductFile = new JLabel();
+    private void createRaytronProductFileLabel() {
+        jlRaytronProductFile = new JLabel();
         jlRaytronProductFile.setText("Raytron Product File");
         jlRaytronProductFile.setLocation(new Point(8, 11));
         jlRaytronProductFile.setDisplayedMnemonic(KeyEvent.VK_O);
@@ -239,41 +254,49 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
         jlRaytronProductFile.setBackground(Color.white);
         jlRaytronProductFile.setForeground(Color.black);
         jlRaytronProductFile.setSize(new Dimension(126, 21));
-        jPanel.add(jlRaytronProductFile);
     }
 
     /**
      * 
      */
-    private void addWidthHeightLabel() {
-        JLabel jLabelWidthHeight = new JLabel();
+    private void createWidthHeightLabel() {
+        jLabelWidthHeight = new JLabel();
         jLabelWidthHeight.setBounds(new Rectangle(8, 42, 126, 23));
         jLabelWidthHeight.setForeground(Color.black);
         jLabelWidthHeight.setText("Width == Height");
-        jPanel.add(jLabelWidthHeight);
     }
 
+    // /**
+    // *
+    // */
+    // private void createPDFColumnsLabel() {
+    // jlPDFColumns = new JLabel();
+    // jlPDFColumns.setBounds(new Rectangle(8, 71, 126, 24));
+    // jlPDFColumns.setForeground(Color.black);
+    // jlPDFColumns.setHorizontalAlignment(SwingConstants.LEFT);
+    // jlPDFColumns.setText("PDF Columns");
+    // }
+    //
     /**
      * 
      */
-    private void addPDFFileLabel() {
-        JLabel jlPDFFile = new JLabel();
+    private void createPDFFileLabel() {
+        jlPDFFile = new JLabel();
         jlPDFFile.setBounds(new Rectangle(8, 71, 126, 24));
+        // jlPDFFile.setBounds(new Rectangle(9, 104, 126, 21));
         jlPDFFile.setForeground(Color.black);
         jlPDFFile.setText("Save to PDF File");
         jlPDFFile.setDisplayedMnemonic(KeyEvent.VK_S);
-        jPanel.add(jlPDFFile, null);
     }
 
     /**
      * 
      */
-    private void addHeader() {
-        JLabel jlHeader = new JLabel();
+    private void createHeader() {
+        jlHeader = new JLabel();
         jlHeader.setBounds(new Rectangle(9, 103, 126, 21));
         jlHeader.setForeground(Color.black);
         jlHeader.setText("Include Header");
-        jPanel.add(jlHeader, null);
     }
 
     /**
@@ -281,12 +304,14 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
      * 
      * @return javax.swing.JTextField
      */
-    private void addJtfProductFile() {
-        jtfRaytronProductFile = new JTextField();
-        jtfRaytronProductFile.setBounds(new Rectangle(134, 10, 228, 23));
-        jtfRaytronProductFile.setText(DEFAULT_LOAD_FILE);
-        jtfRaytronProductFile.setToolTipText("Enter the file name of the Product File");
-        jPanel.add(jtfRaytronProductFile, null);
+    private JTextField getJtfProductFile() {
+        if (jtfRaytronProductFile == null) {
+            jtfRaytronProductFile = new JTextField();
+            jtfRaytronProductFile.setBounds(new Rectangle(134, 10, 228, 23));
+            jtfRaytronProductFile.setText(DEFAULT_LOAD_FILE);
+            jtfRaytronProductFile.setToolTipText("Enter the file name of the Product File");
+        }
+        return jtfRaytronProductFile;
     }
 
     /**
@@ -294,51 +319,70 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
      * 
      * @return javax.swing.JTextField
      */
-    private void addJtfQRCodeWidthHeight() {
-        jtfQRCodeWidthHeight = new JTextField();
-        jtfQRCodeWidthHeight.setBounds(new Rectangle(134, 43, 227, 22));
-        jtfQRCodeWidthHeight.setText("1");
-        jtfQRCodeWidthHeight
-                .setToolTipText("Indicative width/height of the QR Code. If the data cannot be accomodated in the given size then the size will be auto increased.");
-        jtfQRCodeWidthHeight.setName("QRCodeWidthHeight");
-        jPanel.add(jtfQRCodeWidthHeight, null);
+    private JTextField getJtfQRCodeWidthHeight() {
+        if (jtfQRCodeWidthHeight == null) {
+            jtfQRCodeWidthHeight = new JTextField();
+            jtfQRCodeWidthHeight.setBounds(new Rectangle(134, 43, 227, 22));
+            jtfQRCodeWidthHeight.setText("1");
+            jtfQRCodeWidthHeight
+                    .setToolTipText("Indicative width/height of the QR Code. If the data cannot be accomodated in the given size then the size will be auto increased.");
+            jtfQRCodeWidthHeight.setName("QRCodeWidthHeight");
+        }
+        return jtfQRCodeWidthHeight;
     }
+
+    // /**
+    // * This method initializes jtfUserId
+    // *
+    // * @return javax.swing.JTextField
+    // */
+    // private JTextField getJtfPDFColumns() {
+    // if (jtfPDFColumns == null) {
+    // jtfPDFColumns = new JTextField();
+    // jtfPDFColumns.setBounds(new Rectangle(134, 72, 226, 22));
+    // jtfPDFColumns.setText("11");
+    // jtfPDFColumns.setToolTipText("Enter number of columns to be printed in PDF");
+    // // jtfPDFColumns.setName("userid");
+    // jtfPDFColumns.setName("pdfcolumns");
+    // }
+    // return jtfPDFColumns;
+    // }
 
     /**
      * This method initializes jfbFileChooserPreLicenseTemplate
      * 
      * @return javax.swing.JButton
      */
-    private void addJfbFileChooserRaytronProductFile() {
-        jfbFileChooserPreLicenseTemplate = new JButton();
-        jfbFileChooserPreLicenseTemplate.setAction(new FileChooserAction(jtfRaytronProductFile, JFileChooser.OPEN_DIALOG, DEFAULT_LOAD_FILE, "Product File", "csv"));
-        jfbFileChooserPreLicenseTemplate.setMnemonic(KeyEvent.VK_O);
-        jfbFileChooserPreLicenseTemplate.setBounds(new Rectangle(360, 10, 25, 21));
-        this.getClass().getClassLoader();
-        jfbFileChooserPreLicenseTemplate.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("open.gif")));
-        jPanel.add(jfbFileChooserPreLicenseTemplate, null);
+    private JButton getJfbFileChooserRaytronProductFile() {
+        if (jfbFileChooserPreLicenseTemplate == null) {
+            jfbFileChooserPreLicenseTemplate = new JButton();
+            jfbFileChooserPreLicenseTemplate.setAction(new FileChooserAction(jtfRaytronProductFile, JFileChooser.OPEN_DIALOG, DEFAULT_LOAD_FILE, "Product File", "csv"));
+            jfbFileChooserPreLicenseTemplate.setMnemonic(KeyEvent.VK_O);
+            jfbFileChooserPreLicenseTemplate.setBounds(new Rectangle(360, 10, 25, 21));
+            this.getClass().getClassLoader();
+            jfbFileChooserPreLicenseTemplate.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("open.gif")));
+        }
+        return jfbFileChooserPreLicenseTemplate;
     }
 
-    private void addJrbHeaderToBePrinted() {
-        jrbHeaderYes = new JRadioButton("Yes");
-        jrbHeaderYes.setMnemonic(KeyEvent.VK_Y);
-        jrbHeaderYes.setBounds(new Rectangle(200, 103, 50, 21));
-        jrbHeaderYes.setActionCommand("Yes");
-        jrbHeaderYes.setToolTipText("Selecting this will increase the QR Code size and may need a reduction in number of columns.");
+    private void getJrbHeaderToBePrinted() {
+        if (jrbHeaderYes == null) {
+            jrbHeaderYes = new JRadioButton("Yes");
+            jrbHeaderYes.setMnemonic(KeyEvent.VK_Y);
+            jrbHeaderYes.setBounds(new Rectangle(200, 103, 50, 21));
+            jrbHeaderYes.setActionCommand("Yes");
+            jrbHeaderYes.setToolTipText("Selecting this will increase the QR Code size and may need a reduction in number of columns.");
 
-        jrbHeaderNo = new JRadioButton("No");
-        jrbHeaderNo.setMnemonic(KeyEvent.VK_N);
-        jrbHeaderNo.setSelected(true);
-        jrbHeaderNo.setBounds(new Rectangle(134, 103, 50, 21));
-        jrbHeaderNo.setActionCommand("No");
+            jrbHeaderNo = new JRadioButton("No");
+            jrbHeaderNo.setMnemonic(KeyEvent.VK_N);
+            jrbHeaderNo.setSelected(true);
+            jrbHeaderNo.setBounds(new Rectangle(134, 103, 50, 21));
+            jrbHeaderNo.setActionCommand("No");
 
-        buttonGroup = new ButtonGroup();
-        buttonGroup.add(jrbHeaderYes);
-        buttonGroup.add(jrbHeaderNo);
-
-        jPanel.add(jrbHeaderYes, null);
-        jPanel.add(jrbHeaderNo, null);
-
+            buttonGroup = new ButtonGroup();
+            buttonGroup.add(jrbHeaderYes);
+            buttonGroup.add(jrbHeaderNo);
+        }
     }
 
     /**
@@ -346,13 +390,16 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
      * 
      * @return javax.swing.JTextField
      */
-    private void addJtfPDFFile() {
-        jtfPDFFile = new JTextField();
-        // jtfPDFFile.setBounds(new Rectangle(134, 103, 226, 22));
-        jtfPDFFile.setBounds(new Rectangle(134, 72, 226, 22));
-        jtfPDFFile.setToolTipText("Example Raytron.pdf");
-        jtfPDFFile.setText(DEFAULT_SAVE_FILE);
-        jPanel.add(jtfPDFFile);
+    private JTextField getJtfPDFFile() {
+
+        if (jtfPDFFile == null) {
+            jtfPDFFile = new JTextField();
+            // jtfPDFFile.setBounds(new Rectangle(134, 103, 226, 22));
+            jtfPDFFile.setBounds(new Rectangle(134, 72, 226, 22));
+            jtfPDFFile.setToolTipText("Example Raytron.pdf");
+            jtfPDFFile.setText(DEFAULT_SAVE_FILE);
+        }
+        return jtfPDFFile;
     }
 
     /**
@@ -360,25 +407,29 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
      * 
      * @return javax.swing.JButton
      */
-    private void addJbSaveButton() {
-        jbSaveButton = new JButton();
-        // jbSaveButton.setBounds(new Rectangle(360, 102, 24, 23));
-        jbSaveButton.setBounds(new Rectangle(360, 72, 24, 23));
-        jbSaveButton.setAction(new FileChooserAction(jtfPDFFile, JFileChooser.SAVE_DIALOG, DEFAULT_SAVE_FILE, "QR Code PDF File", "pdf"));
-        jbSaveButton.setMnemonic(KeyEvent.VK_S);
-        jbSaveButton.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("save.gif")));
-        jbSaveButton.setToolTipText("Select the file to View or Create the file to save.");
-        jPanel.add(jbSaveButton);
+    private JButton getJbSaveButton() {
+        if (jbSaveButton == null) {
+            jbSaveButton = new JButton();
+            // jbSaveButton.setBounds(new Rectangle(360, 102, 24, 23));
+            jbSaveButton.setBounds(new Rectangle(360, 72, 24, 23));
+            jbSaveButton.setAction(new FileChooserAction(jtfPDFFile, JFileChooser.SAVE_DIALOG, DEFAULT_SAVE_FILE, "QR Code PDF File", "pdf"));
+            jbSaveButton.setMnemonic(KeyEvent.VK_S);
+            jbSaveButton.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("save.gif")));
+            jbSaveButton.setToolTipText("Select the file to View or Create the file to save.");
+        }
+        return jbSaveButton;
     }
 
-    private void addJProgressBar() {
-        jProgressBar = new JProgressBar();
-        jProgressBar.setMinimum(0);
-        jProgressBar.setMaximum(120);
-        jProgressBar.setStringPainted(true);
-        jProgressBar.setBounds(GENERATE_PROGRESSBAR_RECTANGLE);
-        jProgressBar.setVisible(false);
-        jPanel.add(jProgressBar, null);
+    private JProgressBar getJProgressBar() {
+        if (jProgressBar == null) {
+            jProgressBar = new JProgressBar();
+            jProgressBar.setMinimum(0);
+            jProgressBar.setMaximum(100);
+            jProgressBar.setStringPainted(true);
+            jProgressBar.setBounds(GENERATE_PROGRESSBAR_RECTANGLE);
+            jProgressBar.setVisible(false);
+        }
+        return jProgressBar;
     }
 
     /**
@@ -386,21 +437,23 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
      * 
      * @return javax.swing.JButton
      */
-    private void addJButtonGenerate() {
-        jButtonGenerate = new JButton();
-        jButtonGenerate.setBounds(GENERATE_PROGRESSBAR_RECTANGLE);
-        jButtonGenerate.setForeground(Color.black);
-        jButtonGenerate.setText("Generate");
-        jButtonGenerate.setMnemonic(KeyEvent.VK_G);
-        jButtonGenerate.setToolTipText("Generates the license and stores it in the License File");
-        jButtonGenerate.setHideActionText(false);
-        jButtonGenerate.setActionCommand("Generate");
-        jButtonGenerate.addActionListener(this);
-        jPanel.add(jButtonGenerate, null);
+    private JButton getJButtonGenerate() {
+        if (jButtonGenerate == null) {
+            jButtonGenerate = new JButton();
+            jButtonGenerate.setBounds(GENERATE_PROGRESSBAR_RECTANGLE);
+            jButtonGenerate.setForeground(Color.black);
+            jButtonGenerate.setText("Generate");
+            jButtonGenerate.setMnemonic(KeyEvent.VK_G);
+            jButtonGenerate.setToolTipText("Generates the license and stores it in the License File");
+            jButtonGenerate.setHideActionText(false);
+            jButtonGenerate.setActionCommand("Generate");
+            jButtonGenerate.addActionListener(this);
+        }
+        return jButtonGenerate;
     }
 
     public static void main(String[] args) {
-        new RaytronBarcodeGeneratorUI();
+        new RaytronQRCodeGeneratorUI();
     }
 
     /**
@@ -468,13 +521,31 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
             int qrCodeSize = Integer.parseInt(jtfQRCodeWidthHeight.getText());
             BarcodeFormat format = (BarcodeFormat) ddBarCodeType.getSelectedItem();
             boolean includeHeader = "Yes".equals(buttonGroup.getSelection().getActionCommand());
-            task = new Task(new TaskParameter(this, format, addOverLayImage, iFile, oFile, qrCodeSize, includeHeader, saveSampleImage));
+            task = new Task(this, format, addOverLayImage, iFile, oFile, qrCodeSize, includeHeader, saveSampleImage);
             task.addPropertyChangeListener(this);
             task.execute();
         } else {
             jtfPDFFile.setText(Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, ((BarcodeFormat) ddBarCodeType.getSelectedItem()).name() + ".pdf").toString());
         }
     }
+
+    // try {
+    // BufferedImage img =
+    // ImageIO.read(this.getClass().getClassLoader().getResource("raytron-instrument-services-logo-120x120.jpg"));
+    // Image logo = Image.getInstance(imageToBytes(img));
+    // logo.setAbsolutePosition(0, 0);
+    // PdfContentByte cbytes = writer.getDirectContent();
+    // PdfTemplate template = cbytes.createTemplate(20, 20);
+    // template.addImage(logo);
+    // cbytes.addTemplate(template, 0, 0);
+    // Phrase phrase = new Phrase(cbytes + " Raytron Instrument Services",
+    // FontFactory.getFont(FontFactory.TIMES_ROMAN, 7, Font.NORMAL));
+    // HeaderFooter header = new HeaderFooter(phrase, false);
+    // document.setHeader(header);
+    // } catch (IOException | DocumentException e) {
+    // e.printStackTrace();
+    // }
+    // }
 
     public void taskCompleted() {
         setCursor(null); // turn off the wait cursor
