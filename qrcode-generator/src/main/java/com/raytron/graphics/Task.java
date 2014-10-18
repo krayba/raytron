@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.raytron.graphics;
 
 import java.awt.Color;
@@ -37,47 +34,98 @@ import com.lowagie.text.pdf.PdfWriter;
 import com.raytron.barcode.BarcodeFactory;
 import com.raytron.reader.FReader;
 
+/**
+ * A Swing worker implementation.
+ * 
+ * @author Kedar Raybagkar
+ *
+ */
 class Task extends SwingWorker<Void, Void> {
 
     /**
-     * 
+     * Font
      */
     private static final Font R_I_S_FONT = new Font("Courier New", Font.PLAIN, 10);
 
+    /**
+     * Raytron Gradient Paint.
+     */
     private static final GradientPaint R_I_S_GRADIENT_PAINT = new GradientPaint(5, 0, new Color(54, 172, 212), 0, 5, new Color(255, 255, 255), true);
 
     /**
-     * 
+     * Text to be wrapped around the actual image.
      */
     private static final String R_I_S = "RiS";
+    
     /**
-     * 
+     * Cell Padding. 
      */
     private static final float CELL_PADDING = 4f;
+    
+    /**
+     * Name of the Input file to be read from. 
+     */
     private final String iFile;
+    
+    /**
+     * Name of the output file. 
+     */
     private final String oFile;
-    private final int qrCodeSize;
+    
+    /**
+     * Barcode Size.
+     */
+    private final int barcodeSize;
+    
+    /**
+     * Include header in the barcode.
+     */
     private final boolean includeHeader;
-    private final RaytronQRCodeGeneratorUI raytronQRCodeGenerator;
+    
+    /**
+     * UI handle for call backs.
+     */
+    private final RaytronBarcodeGeneratorUI raytronQRCodeGenerator;
+    
+    /**
+     * Number of columns in table.
+     */
     private int tableColumns;
+    
+    /**
+     * Overlay RIS image. 
+     */
     private final boolean overlayRISImage;
+    
+    /**
+     * Image Writer
+     */
     private final Writer writer;
 
-    private final BarcodeFormat barCodeFormat;
+    /**
+     * Barcode format.
+     */
+    private final BarcodeFormat barcodeFormat;
 
+    /**
+     * Save sample image.
+     */
     private final boolean saveSampleImage;
 
-    public Task(final RaytronQRCodeGeneratorUI raytronQRCodeGenerator, final BarcodeFormat format, final boolean overlayRISImage, final String iFile, final String oFile,
-            final int qrCodeSize, final boolean includeHeader, final boolean saveSampleImage) {
-        this.raytronQRCodeGenerator = raytronQRCodeGenerator;
-        this.iFile = iFile;
-        this.oFile = oFile;
-        this.qrCodeSize = qrCodeSize;
-        this.includeHeader = includeHeader;
-        this.overlayRISImage = overlayRISImage;
-        this.barCodeFormat = format;
-        this.saveSampleImage = saveSampleImage;
-        writer = BarcodeFactory.getBarcodeInstance(format);
+    /**
+     * Default constructor.
+     * @param parameter TODO
+     */
+    public Task(TaskParameter parameter) {
+        this.raytronQRCodeGenerator = parameter.getRaytronQRCodeGenerator();
+        this.iFile = parameter.getiFile();
+        this.oFile = parameter.getoFile();
+        this.barcodeSize = parameter.getBarcodeSize();
+        this.includeHeader = parameter.isIncludeHeader();
+        this.overlayRISImage = parameter.isOverlayRISImage();
+        this.barcodeFormat = parameter.getFormat();
+        this.saveSampleImage = parameter.isSaveSampleImage();
+        writer = BarcodeFactory.getBarcodeInstance(barcodeFormat);
     }
 
     /*
@@ -97,7 +145,8 @@ class Task extends SwingWorker<Void, Void> {
             // setDefaultCellProperties(table.getDefaultCell());
 
             freader = new FReader(Paths.get(iFile), includeHeader);
-            table = calculateMaxLengthPicSize(document, freader);
+            com.lowagie.text.Image maxImage = getLargestImageFromFReader(freader);
+            table = createTableByCalculatingPageSizeAndColumns(document.getPageSize(), maxImage);
             setDefaultCellProperties(table.getDefaultCell());
             setProgress(freader.getPercentageRead());
             int columnPrinted = 0;
@@ -106,7 +155,7 @@ class Task extends SwingWorker<Void, Void> {
                 String sLine = freader.next();
                 setProgress(freader.getPercentageRead());
                 if (!"".equals(sLine)) {
-                    BitMatrix matrix = createBarcodeImage(sLine, qrCodeSize);
+                    BitMatrix matrix = createBarcodeImage(sLine, barcodeSize);
                     if (matrix != null) {
                         BufferedImage image;
                         image = createImage(matrix);
@@ -135,6 +184,9 @@ class Task extends SwingWorker<Void, Void> {
             raytronQRCodeGenerator.showErrorPopup("Error while Generating file due to :" + e.getMessage(), "Status");
             e.printStackTrace();
         } finally {
+            if (document.isOpen()) {
+                document.close();
+            }
             if (freader != null) {
                 try {
                     freader.close();
@@ -147,7 +199,8 @@ class Task extends SwingWorker<Void, Void> {
     }
 
     /**
-     * @param image
+     * Saves image to file.
+     * @param image to be saved.
      */
     private void saveImageToFile(BufferedImage image) {
         try {
@@ -157,8 +210,11 @@ class Task extends SwingWorker<Void, Void> {
     }
 
     /**
-     * @param matrix
-     * @return
+     * Creates an image.
+     * Method is responsible to call overlay RIS image based on the params received.
+     * 
+     * @param matrix through which the image to be rendered.
+     * @return Image
      */
     private BufferedImage createImage(BitMatrix matrix) {
         if (overlayRISImage) {
@@ -169,66 +225,71 @@ class Task extends SwingWorker<Void, Void> {
     }
 
     /**
-     * @param table
-     * @param columns2
+     * Adds blank cells to the page probably due to bug in iText.
+     * @param table on which the columns to be added.
+     * @param cols number of columns
      */
-    private void addBlankCellsSoThatPageIsAdded(PdfPTable table, int columns2) {
-        for (int i = 0; i < columns2; i++) {
+    private void addBlankCellsSoThatPageIsAdded(PdfPTable table, int cols) {
+        for (int i = 0; i < cols; i++) {
             PdfPCell cell = new PdfPCell(new Phrase(""));
             setDefaultCellProperties(cell);
             table.addCell(cell);
         }
     }
 
-    private PdfPTable calculateMaxLengthPicSize(Document document, FReader reader) throws Throwable {
-        PdfPTable table = null;
+    /**
+     * Creates and returns image for the maximum length of the data from the file reader.
+     * 
+     * @param reader from where the maximum length data is to be fetched.
+     * @return PDF Table
+     * @throws Throwable
+     */
+    private com.lowagie.text.Image getLargestImageFromFReader(FReader reader) throws Throwable {
+        com.lowagie.text.Image barcodeImage = null;
         String sLine = reader.getMaxLine();
         if (!"".equals(sLine)) {
-            BitMatrix matrix = createBarcodeImage(sLine, qrCodeSize);
+            BitMatrix matrix = createBarcodeImage(sLine, barcodeSize);
             if (matrix != null) {
                 BufferedImage image = createImage(matrix);
-                com.lowagie.text.Image pic = Image.getInstance(image, null);
-                table = createTableByCalculatingPageSizeAndColumns(document, reader, pic);
-                setDefaultCellProperties(table.getDefaultCell());
+                barcodeImage = Image.getInstance(image, null);
             }
         }
-        return table;
+        return barcodeImage;
     }
 
     /**
-     * @param document
-     * @param freader
-     * @param pic
-     * @return
+     * Returns a PDF Table after calculating number of columns that can be accomodated on the page.
+     * @param pageSize rectangle
+     * @param pic Image
+     * @return PDF Table
      * @throws DocumentException
      */
-    private PdfPTable createTableByCalculatingPageSizeAndColumns(Document document, FReader freader, com.lowagie.text.Image pic) throws DocumentException {
-        PdfPTable table;
-        Rectangle psize = document.getPageSize();
-        float tableSize = psize.getWidth();
+    private PdfPTable createTableByCalculatingPageSizeAndColumns(Rectangle pageSize, com.lowagie.text.Image pic) throws DocumentException {
+        float tableSize = pageSize.getWidth();
         tableColumns = (int) (tableSize / (pic.getWidth() + CELL_PADDING));
         float[] widths = new float[tableColumns];
         for (int i = 0; i < tableColumns; i++) {
             widths[i] = pic.getWidth();
         }
-        table = new PdfPTable(tableColumns);
+        PdfPTable table = new PdfPTable(tableColumns);
         table.setWidthPercentage(100);
         table.setWidths(widths);
         return table;
     }
 
     /**
-     * @param image
-     * @return
+     * Overlays RIS image on the raw barcode image.
+     * @param rawBarcodeImage
+     * @return decorated image.
      */
-    private BufferedImage getOverlayRISImage(BufferedImage image) {
-        Graphics g = image.getGraphics();
+    private BufferedImage getOverlayRISImage(BufferedImage rawBarcodeImage) {
+        Graphics g = rawBarcodeImage.getGraphics();
         FontMetrics metrics = g.getFontMetrics(R_I_S_FONT);
         int tw = metrics.stringWidth(R_I_S);
         int th = metrics.getHeight();
 
-        int w = image.getWidth() + tw;
-        int h = image.getHeight() + th;
+        int w = rawBarcodeImage.getWidth() + tw;
+        int h = rawBarcodeImage.getHeight() + th;
 
         BufferedImage newimage = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
 
@@ -240,7 +301,7 @@ class Task extends SwingWorker<Void, Void> {
 
         graphics.drawString(R_I_S, (w / 2) - (tw / 2), (th / 2));
 
-        graphics.drawImage(image, (w / 2) - (image.getWidth() / 2), th / 2, image.getWidth(), image.getHeight(), null);
+        graphics.drawImage(rawBarcodeImage, (w / 2) - (rawBarcodeImage.getWidth() / 2), th / 2, rawBarcodeImage.getWidth(), rawBarcodeImage.getHeight(), null);
 
         graphics.setTransform(AffineTransform.getQuadrantRotateInstance(1));
         graphics.drawString(R_I_S, (h / 2) - (th / 2), -(w - tw / 2));
@@ -258,8 +319,9 @@ class Task extends SwingWorker<Void, Void> {
     }
 
     /**
-     * @param w
-     * @param h
+     * Paint the graphics for the given width and height and set the font.
+     * @param w width
+     * @param h height
      * @param graphics
      */
     private void paintGraphicsAndSetFontColor(int w, int h, Graphics2D graphics) {
@@ -271,17 +333,18 @@ class Task extends SwingWorker<Void, Void> {
     }
 
     /**
-     * @param cell
+     * Sets the cell padding properties.
+     * @param cell to be set
      * @param padding
-     *            TODO
+     *            padding
      * @param paddingBottom
-     *            TODO
+     *            bottom padding
      * @param paddingTop
-     *            TODO
+     *            top padding
      * @param paddingLeft
-     *            TODO
+     *            left padding
      * @param paddingRight
-     *            TODO
+     *            right padding
      */
     private void setCellProperties(PdfPCell cell, float padding, float paddingBottom, float paddingTop, float paddingLeft, float paddingRight) {
         cell.setPadding(padding);
@@ -292,13 +355,19 @@ class Task extends SwingWorker<Void, Void> {
         cell.setBorder(com.lowagie.text.Rectangle.NO_BORDER);
     }
 
+    /**
+     * Set the default cell properties with bottom and left padding to {@link #CELL_PADDING}
+     * @param cell on which the properties to be set
+     */
     private void setDefaultCellProperties(PdfPCell cell) {
         setCellProperties(cell, 0f, CELL_PADDING, 0f, CELL_PADDING, 0f);
     }
 
     /**
-     * @param pic
-     * @return
+     * Creates a PDF Cell for the given image.
+     * 
+     * @param pic image
+     * @return PDF cell
      */
     private PdfPCell createPdfPCell(com.lowagie.text.Image pic) {
         PdfPCell cell = new PdfPCell(pic, false);
@@ -315,13 +384,15 @@ class Task extends SwingWorker<Void, Void> {
     }
 
     /**
-     * @param s
+     * Returns the BitMatrix for for the given text.
+     * @param barcodeText
      * @param qrCodeSize
-     * @return
+     * @return BitMatrix
      * @throws WriterException
      */
-    private BitMatrix createBarcodeImage(String s, int qrCodeSize) throws WriterException {
-        return writer.encode(s, barCodeFormat, qrCodeSize, qrCodeSize);
+    private BitMatrix createBarcodeImage(String barcodeText, int qrCodeSize) throws WriterException {
+        //TODO: As now we have provided multiple formats we need to think about the width and height.
+        return writer.encode(barcodeText, barcodeFormat, qrCodeSize, qrCodeSize);
     }
 
 }
