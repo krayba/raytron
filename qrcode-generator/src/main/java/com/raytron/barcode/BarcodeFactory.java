@@ -18,7 +18,9 @@ import com.google.zxing.pdf417.PDF417Writer;
 import com.google.zxing.qrcode.QRCodeWriter;
 
 /**
- * @author kedar460043
+ * Factory class to get the appropriate {@link Writer} from various barcode formats.
+ * 
+ * @author Kedar Raybagkar
  * 
  */
 public class BarcodeFactory {
