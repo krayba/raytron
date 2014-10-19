@@ -43,7 +43,7 @@ import com.google.zxing.BarcodeFormat;
  * @author Kedar Raybagkar
  * 
  */
-public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener, PropertyChangeListener {
+public class RaytronBarcodeGeneratorUI extends JFrame{
 
     /**
 	 * 
@@ -177,7 +177,13 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
                 BarcodeFormat.DATA_MATRIX, BarcodeFormat.PDF_417, BarcodeFormat.ITF, BarcodeFormat.EAN_8, BarcodeFormat.EAN_13, BarcodeFormat.UPC_A, BarcodeFormat.QR_CODE });
         ddBarCodeType.setSelectedIndex(10);
         ddBarCodeType.setBounds(new Rectangle(136, 134, 233, 23));
-        ddBarCodeType.addActionListener(this);
+        ddBarCodeType.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jtfPDFFile.setText(Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, ((BarcodeFormat) ddBarCodeType.getSelectedItem()).name() + ".pdf").toString());
+            }
+        });
         jPanel.add(ddBarCodeType, null);
     }
 
@@ -395,7 +401,7 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
         jButtonGenerate.setToolTipText("Generates the license and stores it in the License File");
         jButtonGenerate.setHideActionText(false);
         jButtonGenerate.setActionCommand("Generate");
-        jButtonGenerate.addActionListener(this);
+        jButtonGenerate.addActionListener(new GenerateButtonActionListener(this));
         jPanel.add(jButtonGenerate, null);
     }
 
@@ -403,11 +409,43 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
         new RaytronBarcodeGeneratorUI();
     }
 
+    private final class GenerateButtonActionListener implements ActionListener {
+        private RaytronBarcodeGeneratorUI uiInstance;
+
+        public GenerateButtonActionListener(RaytronBarcodeGeneratorUI raytronBarcodeGeneratorUI) {
+            this.uiInstance = raytronBarcodeGeneratorUI;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            jButtonGenerate.setVisible(false);
+            jProgressBar.setValue(0);
+            jProgressBar.setVisible(true);
+            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            String iFile = jtfRaytronProductFile.getText();
+            String oFile = jtfPDFFile.getText();
+            int qrCodeSize = Integer.parseInt(jtfQRCodeWidthHeight.getText());
+            BarcodeFormat format = (BarcodeFormat) ddBarCodeType.getSelectedItem();
+            boolean includeHeader = "Yes".equals(buttonGroup.getSelection().getActionCommand());
+            task = new Task(new TaskParameter(uiInstance, format, addOverLayImage, iFile, oFile, qrCodeSize, includeHeader, saveSampleImage));
+            task.addPropertyChangeListener(new PropertyChangeListener() {
+                
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if ("progress" == evt.getPropertyName()) {
+                        int progress = (Integer) evt.getNewValue();
+                        jProgressBar.setValue(progress);
+                    }
+                }
+            });
+            task.execute();
+        }
+    }
+
     /**
      * File Chooser.
      * 
      * @author Kedar Raybagkar
-     * @since V1.0R27
      * 
      */
     class FileChooserAction extends AbstractAction {
@@ -435,44 +473,6 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 field_.setText(chooser.getSelectedFile().getPath());
             }
-        }
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans. PropertyChangeEvent)
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        if ("progress" == evt.getPropertyName()) {
-            int progress = (Integer) evt.getNewValue();
-            jProgressBar.setValue(progress);
-        }
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == jButtonGenerate) {
-            jButtonGenerate.setVisible(false);
-            jProgressBar.setValue(0);
-            jProgressBar.setVisible(true);
-            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            String iFile = jtfRaytronProductFile.getText();
-            String oFile = jtfPDFFile.getText();
-            int qrCodeSize = Integer.parseInt(jtfQRCodeWidthHeight.getText());
-            BarcodeFormat format = (BarcodeFormat) ddBarCodeType.getSelectedItem();
-            boolean includeHeader = "Yes".equals(buttonGroup.getSelection().getActionCommand());
-            task = new Task(new TaskParameter(this, format, addOverLayImage, iFile, oFile, qrCodeSize, includeHeader, saveSampleImage));
-            task.addPropertyChangeListener(this);
-            task.execute();
-        } else {
-            jtfPDFFile.setText(Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, ((BarcodeFormat) ddBarCodeType.getSelectedItem()).name() + ".pdf").toString());
         }
     }
 
