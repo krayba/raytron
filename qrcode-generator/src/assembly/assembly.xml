@@ -19,11 +19,10 @@
 	</dependencySets>
 	
 	 -->
-	<fileSets>
-		<fileSet>
-			<directory>scripts</directory>
-			<fileMode>744</fileMode>
-			<outputDirectory>/</outputDirectory>
-		</fileSet>
-	</fileSets>
+	 <files>
+	 	<file>
+	 		<source>README.md</source>
+	 		<destName>/README.md</destName>
+	 	</file>
+	 </files>
 </assembly>
