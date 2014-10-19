@@ -145,12 +145,14 @@ class Task extends SwingWorker<Void, Void> {
             // setDefaultCellProperties(table.getDefaultCell());
 
             freader = new FReader(Paths.get(iFile), includeHeader);
-            com.lowagie.text.Image maxImage = getLargestImageFromFReader(freader);
-            table = createTableByCalculatingPageSizeAndColumns(document.getPageSize(), maxImage);
+            BufferedImage maxImage = getLargestImageFromFReader(freader);
+            if (saveSampleImage) {
+                saveImageToFile(maxImage);
+            }
+            table = createTableByCalculatingPageSizeAndColumns(document.getPageSize(), Image.getInstance(maxImage, null));
             setDefaultCellProperties(table.getDefaultCell());
             setProgress(freader.getPercentageRead());
             int columnPrinted = 0;
-            boolean imageSaved = (saveSampleImage ? false : true);
             while (freader.hasNext()) {
                 String sLine = freader.next();
                 setProgress(freader.getPercentageRead());
@@ -160,11 +162,6 @@ class Task extends SwingWorker<Void, Void> {
                         BufferedImage image;
                         image = createImage(matrix);
                         com.lowagie.text.Image pic = Image.getInstance(image, null);
-                        if (!imageSaved) {
-                            saveImageToFile(image);
-                            imageSaved = true;
-                        }
-
                         table.addCell(createPdfPCell(pic));
                         if (++columnPrinted >= tableColumns) {
                             columnPrinted = 0;
@@ -244,17 +241,17 @@ class Task extends SwingWorker<Void, Void> {
      * @return PDF Table
      * @throws Throwable
      */
-    private com.lowagie.text.Image getLargestImageFromFReader(FReader reader) throws Throwable {
-        com.lowagie.text.Image barcodeImage = null;
+    private BufferedImage getLargestImageFromFReader(FReader reader) throws Throwable {
+        BufferedImage image = null;
         String sLine = reader.getMaxLine();
         if (!"".equals(sLine)) {
             BitMatrix matrix = createBarcodeImage(sLine, barcodeSize);
             if (matrix != null) {
-                BufferedImage image = createImage(matrix);
-                barcodeImage = Image.getInstance(image, null);
+//                barcodeImage = Image.getInstance(image, null);
+                image = createImage(matrix);
             }
         }
-        return barcodeImage;
+        return image;
     }
 
     /**

@@ -374,7 +374,7 @@ public class RaytronBarcodeGeneratorUI extends JFrame implements ActionListener,
     private void addJProgressBar() {
         jProgressBar = new JProgressBar();
         jProgressBar.setMinimum(0);
-        jProgressBar.setMaximum(120);
+        jProgressBar.setMaximum(100);
         jProgressBar.setStringPainted(true);
         jProgressBar.setBounds(GENERATE_PROGRESSBAR_RECTANGLE);
         jProgressBar.setVisible(false);
