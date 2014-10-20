@@ -9,7 +9,7 @@ import com.google.zxing.BarcodeFormat;
  *
  */
 public class TaskParameter {
-    private final RaytronBarcodeGeneratorUI raytronQRCodeGenerator;
+    private final PopupTaskHandler popupTaskHandler;
     private final BarcodeFormat format;
     private final boolean overlayRISImage;
     private final String iFile;
@@ -18,9 +18,9 @@ public class TaskParameter {
     private final boolean includeHeader;
     private final boolean saveSampleImage;
 
-    public TaskParameter(RaytronBarcodeGeneratorUI raytronQRCodeGenerator, BarcodeFormat format, boolean overlayRISImage, String iFile, String oFile, int barcodeSize,
+    public TaskParameter(PopupTaskHandler raytronQRCodeGenerator, BarcodeFormat format, boolean overlayRISImage, String iFile, String oFile, int barcodeSize,
             boolean includeHeader, boolean saveSampleImage) {
-        this.raytronQRCodeGenerator = raytronQRCodeGenerator;
+        this.popupTaskHandler = raytronQRCodeGenerator;
         this.format = format;
         this.overlayRISImage = overlayRISImage;
         this.iFile = iFile;
@@ -30,8 +30,8 @@ public class TaskParameter {
         this.saveSampleImage = saveSampleImage;
     }
 
-    public RaytronBarcodeGeneratorUI getRaytronQRCodeGenerator() {
-        return raytronQRCodeGenerator;
+    public PopupTaskHandler getRaytronQRCodeGenerator() {
+        return popupTaskHandler;
     }
 
     public BarcodeFormat getFormat() {

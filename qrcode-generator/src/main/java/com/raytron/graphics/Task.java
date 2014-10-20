@@ -85,7 +85,7 @@ class Task extends SwingWorker<Void, Void> {
     /**
      * UI handle for call backs.
      */
-    private final RaytronBarcodeGeneratorUI raytronQRCodeGenerator;
+    private final PopupTaskHandler raytronQRCodeGenerator;
     
     /**
      * Number of columns in table.

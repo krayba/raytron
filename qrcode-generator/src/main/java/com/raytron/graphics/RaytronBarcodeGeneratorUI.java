@@ -43,7 +43,7 @@ import com.google.zxing.BarcodeFormat;
  * @author Kedar Raybagkar
  * 
  */
-public class RaytronBarcodeGeneratorUI extends JFrame{
+public class RaytronBarcodeGeneratorUI extends JFrame implements PopupTaskHandler{
 
     /**
 	 * 
@@ -70,8 +70,6 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
 
     private JRadioButton jrbHeaderYes = null;
 
-    protected Task task;
-
     private JRadioButton jrbHeaderNo;
 
     private ButtonGroup buttonGroup;
@@ -81,15 +79,12 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
     private final String DEFAULT_LOAD_FILE;
     private final String DEFAULT_SAVE_FILE;
 
-    private JComboBox<BarcodeFormat> ddBarCodeType;
-
-    private JCheckBox overLayImageCheckBox;
+    private BarcodeFormat format = BarcodeFormat.QR_CODE;
 
     private boolean addOverLayImage;
 
     protected boolean saveSampleImage;
 
-    private JCheckBox saveSampleImageCheckBox;
 
     /**
      * This method initializes
@@ -97,7 +92,7 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
      */
     public RaytronBarcodeGeneratorUI() {
         super();
-        DEFAULT_DRIVE = getDerivedDrive();
+        DEFAULT_DRIVE = getHardDiskDrive();
         DEFAULT_LOAD_FILE = Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, "Product.csv").toString();
         DEFAULT_SAVE_FILE = Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, BarcodeFormat.QR_CODE.name() + ".pdf").toString(); 
         initialize();
@@ -108,13 +103,8 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
      * 
      */
     private void initialize() {
-        Dimension mydim = new Dimension(400, 350);
-        this.setSize(mydim);
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-        this.setLocation((int) (dim.getWidth() - mydim.getWidth()) / 2, (int) (dim.getHeight() - mydim.getHeight()) / 2);
-        ImageIcon icon = new ImageIcon(this.getClass().getClassLoader().getResource("raytron-instrument-services-logo-120x120.jpg"));
-        this.setIconImage(icon.getImage());
-        addJPanel();
+        buildDimensions();
+        initializePanel();
         addProductFile();
         addWidthHeightLabelAndField();
         addPDFFile();
@@ -124,10 +114,18 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
         addSaveSampleImmage();
         addJButtonGenerate();
         addJProgressBar();
-        this.setTitle("Raytron QRCode Generator");
-        this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        this.setVisible(true);
+        setVisible(true);
+    }
 
+    private void buildDimensions() {
+        Dimension mydim = new Dimension(400, 350);
+        this.setSize(mydim);
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+        this.setLocation((int) (dim.getWidth() - mydim.getWidth()) / 2, (int) (dim.getHeight() - mydim.getHeight()) / 2);
+        ImageIcon icon = new ImageIcon(this.getClass().getClassLoader().getResource("raytron-instrument-services-logo-120x120.jpg"));
+        setIconImage(icon.getImage());
+        setTitle("Raytron QRCode Generator");
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
     }
 
     /**
@@ -136,7 +134,7 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
      * @return javax.swing.JPanel
      * @throws IOException
      */
-    private void addJPanel() {
+    private void initializePanel() {
         jPanel = (JPanel) this.getContentPane();
         jPanel.setLayout(null);
         jPanel.setBorder(new SoftBevelBorder(SoftBevelBorder.RAISED));
@@ -173,7 +171,7 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
         barcodeType.setText("Barcode Type");
         barcodeType.setBounds(new Rectangle(8, 134, 126, 23));
         jPanel.add(barcodeType);
-        ddBarCodeType = new JComboBox<BarcodeFormat>(new BarcodeFormat[] { BarcodeFormat.AZTEC, BarcodeFormat.CODABAR, BarcodeFormat.CODE_39, BarcodeFormat.CODE_128,
+        JComboBox<BarcodeFormat> ddBarCodeType = new JComboBox<BarcodeFormat>(new BarcodeFormat[] { BarcodeFormat.AZTEC, BarcodeFormat.CODABAR, BarcodeFormat.CODE_39, BarcodeFormat.CODE_128,
                 BarcodeFormat.DATA_MATRIX, BarcodeFormat.PDF_417, BarcodeFormat.ITF, BarcodeFormat.EAN_8, BarcodeFormat.EAN_13, BarcodeFormat.UPC_A, BarcodeFormat.QR_CODE });
         ddBarCodeType.setSelectedIndex(10);
         ddBarCodeType.setBounds(new Rectangle(136, 134, 233, 23));
@@ -181,7 +179,10 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                jtfPDFFile.setText(Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, ((BarcodeFormat) ddBarCodeType.getSelectedItem()).name() + ".pdf").toString());
+                @SuppressWarnings("unchecked")
+                JComboBox<BarcodeFormat> barcode = (JComboBox<BarcodeFormat>)e.getSource();
+                format = (BarcodeFormat) barcode.getSelectedItem();
+                jtfPDFFile.setText(Paths.get(DEFAULT_DRIVE, DEFAULT_FOLDER, format.name() + ".pdf").toString());
             }
         });
         jPanel.add(ddBarCodeType, null);
@@ -195,7 +196,7 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
         overLayImageLabel.setBounds(new Rectangle(8, 164, 126, 23));
         overLayImageLabel.setDisplayedMnemonic(KeyEvent.VK_R);
         jPanel.add(overLayImageLabel);
-        overLayImageCheckBox = new JCheckBox();
+        JCheckBox overLayImageCheckBox = new JCheckBox();
         overLayImageCheckBox.setBounds(new Rectangle(134, 164, 50, 21));
         overLayImageCheckBox.setSelected(false);
         overLayImageCheckBox.setVisible(true);
@@ -218,7 +219,7 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
         overLayImageLabel.setBounds(new Rectangle(8, 197, 126, 23));
         overLayImageLabel.setDisplayedMnemonic(KeyEvent.VK_I);
         jPanel.add(overLayImageLabel);
-        saveSampleImageCheckBox = new JCheckBox();
+        JCheckBox saveSampleImageCheckBox = new JCheckBox();
         saveSampleImageCheckBox.setBounds(new Rectangle(134, 197, 50, 21));
         saveSampleImageCheckBox.setSelected(false);
         saveSampleImageCheckBox.setVisible(true);
@@ -410,9 +411,9 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
     }
 
     private final class GenerateButtonActionListener implements ActionListener {
-        private RaytronBarcodeGeneratorUI uiInstance;
+        private PopupTaskHandler uiInstance;
 
-        public GenerateButtonActionListener(RaytronBarcodeGeneratorUI raytronBarcodeGeneratorUI) {
+        public GenerateButtonActionListener(PopupTaskHandler raytronBarcodeGeneratorUI) {
             this.uiInstance = raytronBarcodeGeneratorUI;
         }
 
@@ -425,9 +426,8 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
             String iFile = jtfRaytronProductFile.getText();
             String oFile = jtfPDFFile.getText();
             int qrCodeSize = Integer.parseInt(jtfQRCodeWidthHeight.getText());
-            BarcodeFormat format = (BarcodeFormat) ddBarCodeType.getSelectedItem();
             boolean includeHeader = "Yes".equals(buttonGroup.getSelection().getActionCommand());
-            task = new Task(new TaskParameter(uiInstance, format, addOverLayImage, iFile, oFile, qrCodeSize, includeHeader, saveSampleImage));
+            Task task = new Task(new TaskParameter(uiInstance, format, addOverLayImage, iFile, oFile, qrCodeSize, includeHeader, saveSampleImage));
             task.addPropertyChangeListener(new PropertyChangeListener() {
                 
                 @Override
@@ -476,24 +476,39 @@ public class RaytronBarcodeGeneratorUI extends JFrame{
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.raytron.graphics.PopupTaskHandler#taskCompleted()
+     */
+    @Override
     public void taskCompleted() {
         setCursor(null); // turn off the wait cursor
         jButtonGenerate.setVisible(true);
         jProgressBar.setVisible(false);
     }
 
+    /* (non-Javadoc)
+     * @see com.raytron.graphics.PopupTaskHandler#showInformationPopup(java.lang.Object, java.lang.String)
+     */
+    @Override
     public void showInformationPopup(Object message, String title) {
         JOptionPane.showMessageDialog(jPanel, message, title, JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /* (non-Javadoc)
+     * @see com.raytron.graphics.PopupTaskHandler#showErrorPopup(java.lang.Object, java.lang.String)
+     */
+    @Override
     public void showErrorPopup(Object message, String title) {
         JOptionPane.showMessageDialog(jPanel, message, title, JOptionPane.ERROR_MESSAGE);
     }
 
     /**
-     * @return
+     * Returns the Writable hard disk other than C for windows.
+     * As the program is directed for windows there is no need for mac/linux/unix structures.
+     * 
+     * @return Drive Letter
      */
-    private String getDerivedDrive() {
+    private String getHardDiskDrive() {
         File[] roots = File.listRoots();
         if (roots.length == 1) {
             return roots[0].getPath();
